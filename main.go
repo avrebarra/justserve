@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/leaanthony/clir"
 )
@@ -28,12 +29,18 @@ func main() {
 		setuplog(quiet)
 
 		// start static server
-		fs := http.FileServer(http.Dir(location))
+		abspath, err := filepath.Abs(location)
+		if err != nil {
+			err = fmt.Errorf("cannot resolve path: %w", err)
+			return
+		}
+		fs := http.FileServer(http.Dir(abspath))
 		http.Handle("/", fs)
 
 		port := fmt.Sprintf(":%d", portint)
 		log.Println(fmt.Sprintf("Listening on http://localhost%s...", port))
 		if err = http.ListenAndServe(port, nil); err != nil {
+			err = fmt.Errorf("cannot start server: %w", err)
 			return
 		}
 		return
